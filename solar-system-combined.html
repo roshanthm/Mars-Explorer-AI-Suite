@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Page Management */
+        .page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        /* Background */
+        #homePage {
+            background: linear-gradient(to bottom, #1e3a8a, #0f172a, #000000);
+        }
+
+        #planetPage {
+            background: linear-gradient(to bottom, #1e3a8a, #0f172a, #000000);
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Star Field */
+        .star-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% {
+                opacity: 0.2;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+        }
+
+        /* Nebula Effects */
+        .nebula {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: nebulaDrift ease-in-out infinite;
+        }
+
+        .nebula-1 {
+            top: 25%;
+            left: 25%;
+            width: 400px;
+            height: 400px;
+            background: rgba(59, 130, 246, 0.2);
+            animation-duration: 20s;
+        }
+
+        .nebula-2 {
+            bottom: 25%;
+            right: 25%;
+            width: 400px;
+            height: 400px;
+            background: rgba(168, 85, 247, 0.2);
+            animation-duration: 25s;
+        }
+
+        @keyframes nebulaDrift {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(50px, -30px) scale(1.2);
+            }
+            66% {
+                transform: translate(-50px, 30px) scale(1.3);
+            }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding-top: 80px;
+            padding-bottom: 48px;
+        }
+
+        .main-title {
+            font-size: 5rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 0 80px rgba(99, 102, 241, 0.5);
+            margin-bottom: 16px;
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% {
+                text-shadow: 0 0 40px rgba(139, 92, 246, 0.8), 0 0 80px rgba(99, 102, 241, 0.5);
+            }
+            50% {
+                text-shadow: 0 0 60px rgba(139, 92, 246, 1), 0 0 120px rgba(99, 102, 241, 0.8);
+            }
+        }
+
+        .title-line {
+            height: 4px;
+            width: 384px;
+            margin: 0 auto;
+            border-radius: 9999px;
+            background: linear-gradient(90deg, transparent, #8b5cf6, #6366f1, #8b5cf6, transparent);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.8);
+            animation: lineExpand 1.5s ease-out forwards;
+        }
+
+        @keyframes lineExpand {
+            from {
+                transform: scaleX(0);
+            }
+            to {
+                transform: scaleX(1);
+            }
+        }
+
+        /* Orbit Container */
+        .orbit-container {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 32px 80px;
+        }
+
+        .orbit-path {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .orbit-svg {
+            filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.8));
+        }
+
+        .orbit-particle {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #a78bfa;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+            animation: particleMove 8s linear infinite;
+        }
+
+        .particle-1 { animation-delay: 0s; }
+        .particle-2 { animation-delay: 1.6s; }
+        .particle-3 { animation-delay: 3.2s; }
+        .particle-4 { animation-delay: 4.8s; }
+        .particle-5 { animation-delay: 6.4s; }
+
+        @keyframes particleMove {
+            0% {
+                left: 0%;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                left: 100%;
+                opacity: 0;
+            }
+        }
+
+        /* Planets Row */
+        .planets-row {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            max-width: 1800px;
+            width: 100%;
+            padding: 0 48px;
+        }
+
+        /* Planet Item */
+        .planet-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(100px);
+            animation: planetFadeIn 0.8s ease-out forwards;
+        }
+
+        .planet-item:nth-child(1) { animation-delay: 0s; }
+        .planet-item:nth-child(2) { animation-delay: 0.15s; }
+        .planet-item:nth-child(3) { animation-delay: 0.3s; }
+        .planet-item:nth-child(4) { animation-delay: 0.45s; }
+        .planet-item:nth-child(5) { animation-delay: 0.6s; }
+        .planet-item:nth-child(6) { animation-delay: 0.75s; }
+        .planet-item:nth-child(7) { animation-delay: 0.9s; }
+        .planet-item:nth-child(8) { animation-delay: 1.05s; }
+
+        @keyframes planetFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Planet Container */
+        .planet-container {
+            position: relative;
+            margin-bottom: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .planet-item:hover .planet-container {
+            transform: scale(1.15);
+        }
+
+        /* Planet Animations */
+        .planet-item:nth-child(1) .planet-container { animation: float1 3s ease-in-out infinite; }
+        .planet-item:nth-child(2) .planet-container { animation: float2 3.5s ease-in-out infinite; }
+        .planet-item:nth-child(3) .planet-container { animation: float3 4s ease-in-out infinite; }
+        .planet-item:nth-child(4) .planet-container { animation: float4 4.5s ease-in-out infinite; }
+        .planet-item:nth-child(5) .planet-container { animation: float5 5s ease-in-out infinite; }
+        .planet-item:nth-child(6) .planet-container { animation: float6 5.5s ease-in-out infinite; }
+        .planet-item:nth-child(7) .planet-container { animation: float7 6s ease-in-out infinite; }
+        .planet-item:nth-child(8) .planet-container { animation: float8 6.5s ease-in-out infinite; }
+
+        @keyframes float1 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float3 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float4 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float5 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float6 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float7 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes float8 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        /* Planet Glow */
+        .planet-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.5;
+            }
+        }
+
+        .planet-item:hover .planet-glow {
+            animation: glowPulseHover 2s ease-in-out infinite;
+        }
+
+        @keyframes glowPulseHover {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 0.8;
+            }
+        }
+
+        /* Planet Ring */
+        .planet-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid;
+            opacity: 0.4;
+            animation: ringPulse 3s ease-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        /* Planet Image */
+        .planet-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .planet-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .planet-item:hover .planet-image {
+            animation: planetRotate 8s linear infinite;
+        }
+
+        @keyframes planetRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Planet Shimmer */
+        .planet-shimmer {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.5) 50%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .planet-item:hover .planet-shimmer {
+            opacity: 1;
+            animation: shimmer 1.5s linear infinite;
+        }
+
+        @keyframes shimmer {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Planet Name */
+        .planet-name {
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-align: center;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .planet-item:hover .planet-name {
+            transform: scale(1.1);
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding-bottom: 32px;
+        }
+
+        .footer-text {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.875rem;
+            letter-spacing: 0.15em;
+            animation: footerPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes footerPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Planet Detail Page */
+        .planet-detail-bg {
+            position: absolute;
+            inset: 0;
+            animation: detailBgPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes detailBgPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.5;
+            }
+        }
+
+        .back-button {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-5px) scale(1.05);
+        }
+
+        .planet-detail-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .planet-detail-image-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 48px;
+            animation: detailFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes detailFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .planet-detail-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            animation: detailGlowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes detailGlowPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .planet-detail-image {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+            animation: detailRotate 20s linear infinite;
+        }
+
+        @keyframes detailRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .planet-detail-name {
+            font-size: 4rem;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 0.1em;
+            margin-bottom: 24px;
+            animation: detailNameGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes detailNameGlow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .planet-detail-info {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.25rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 48px;
+        }
+
+        .planet-detail-dots {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        .dot:nth-child(1) { animation-delay: 0s; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        .dot:nth-child(4) { animation-delay: 0.6s; }
+        .dot:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes dotPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .main-title {
+                font-size: 4rem;
+            }
+            .planets-row {
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-title {
+                font-size: 3rem;
+            }
+            .planets-row {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 2.5rem;
+            }
+            .title-line {
+                width: 250px;
+            }
+            .planet-detail-name {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Home Page -->
+    <div id="homePage" class="page active">
+        <!-- Star Field Background -->
+        <div class="star-field" id="starField"></div>
+
+        <!-- Cosmic Nebula Effects -->
+        <div class="nebula nebula-1"></div>
+        <div class="nebula nebula-2"></div>
+
+        <!-- Header Section -->
+        <header class="header">
+            <h1 class="main-title">Solar System Explorer</h1>
+            <div class="title-line"></div>
+        </header>
+
+        <!-- Planet Orbit Section -->
+        <main class="orbit-container">
+            <!-- Orbital Path Line -->
+            <div class="orbit-path">
+                <svg class="orbit-svg" width="100%" height="2">
+                    <line x1="0" y1="1" x2="100%" y2="1" stroke="url(#orbitGradient)" stroke-width="2" stroke-dasharray="10 5"/>
+                    <defs>
+                        <linearGradient id="orbitGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#667eea" stop-opacity="0.3"/>
+                            <stop offset="25%" stop-color="#764ba2" stop-opacity="0.8"/>
+                            <stop offset="50%" stop-color="#f093fb" stop-opacity="1"/>
+                            <stop offset="75%" stop-color="#4facfe" stop-opacity="0.8"/>
+                            <stop offset="100%" stop-color="#00f2fe" stop-opacity="0.3"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="orbit-particle particle-1"></div>
+                <div class="orbit-particle particle-2"></div>
+                <div class="orbit-particle particle-3"></div>
+                <div class="orbit-particle particle-4"></div>
+                <div class="orbit-particle particle-5"></div>
+            </div>
+
+            <!-- Planets -->
+            <div class="planets-row">
+                <div class="planet-item" data-planet="mercury" data-glow="#D4AF37">
+                    <div class="planet-container" style="width: 80px; height: 80px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1558447971-af2d6fc8469f?w=400" alt="Mercury" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Mercury</p>
+                </div>
+
+                <div class="planet-item" data-planet="venus" data-glow="#FFA500">
+                    <div class="planet-container" style="width: 95px; height: 95px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1748187317747-58f0d740c2e2?w=400" alt="Venus" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Venus</p>
+                </div>
+
+                <div class="planet-item" data-planet="earth" data-glow="#1E90FF">
+                    <div class="planet-container" style="width: 100px; height: 100px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1727363584291-433dcd86a0fa?w=400" alt="Earth" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Earth</p>
+                </div>
+
+                <div class="planet-item" data-planet="mars" data-glow="#FF4500">
+                    <div class="planet-container" style="width: 85px; height: 85px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400" alt="Mars" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Mars</p>
+                </div>
+
+                <div class="planet-item" data-planet="jupiter" data-glow="#DAA520">
+                    <div class="planet-container" style="width: 140px; height: 140px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1639477734993-44982980229e?w=400" alt="Jupiter" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Jupiter</p>
+                </div>
+
+                <div class="planet-item" data-planet="saturn" data-glow="#F4A460">
+                    <div class="planet-container" style="width: 130px; height: 130px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=400" alt="Saturn" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Saturn</p>
+                </div>
+
+                <div class="planet-item" data-planet="uranus" data-glow="#00CED1">
+                    <div class="planet-container" style="width: 110px; height: 110px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1639548206689-1a5238f8d5bb?w=400" alt="Uranus" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Uranus</p>
+                </div>
+
+                <div class="planet-item" data-planet="neptune" data-glow="#4169E1">
+                    <div class="planet-container" style="width: 105px; height: 105px;">
+                        <div class="planet-glow"></div>
+                        <div class="planet-ring"></div>
+                        <div class="planet-image-wrapper">
+                            <img src="https://images.unsplash.com/photo-1707056789816-e27c502d42bf?w=400" alt="Neptune" class="planet-image">
+                        </div>
+                        <div class="planet-shimmer"></div>
+                    </div>
+                    <p class="planet-name">Neptune</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Info -->
+        <footer class="footer">
+            <p class="footer-text">Click any planet to explore</p>
+        </footer>
+    </div>
+
+    <!-- Planet Detail Page -->
+    <div id="planetPage" class="page">
+        <div class="star-field" id="starFieldDetail"></div>
+        <div class="planet-detail-bg"></div>
+
+        <button class="back-button" id="backButton">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+        </button>
+
+        <div class="planet-detail-content">
+            <div class="planet-detail-image-container">
+                <div class="planet-detail-glow"></div>
+                <img id="planetDetailImage" src="" alt="" class="planet-detail-image">
+            </div>
+            <h1 id="planetDetailName" class="planet-detail-name"></h1>
+            <p class="planet-detail-info">Detailed information coming soon...</p>
+            <div class="planet-detail-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Planet data
+        const planetData = {
+            mercury: {
+                name: 'Mercury',
+                image: 'https://images.unsplash.com/photo-1558447971-af2d6fc8469f?w=400',
+                glow: '#D4AF37'
+            },
+            venus: {
+                name: 'Venus',
+                image: 'https://images.unsplash.com/photo-1748187317747-58f0d740c2e2?w=400',
+                glow: '#FFA500'
+            },
+            earth: {
+                name: 'Earth',
+                image: 'https://images.unsplash.com/photo-1727363584291-433dcd86a0fa?w=400',
+                glow: '#1E90FF'
+            },
+            mars: {
+                name: 'Mars',
+                image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400',
+                glow: '#FF4500'
+            },
+            jupiter: {
+                name: 'Jupiter',
+                image: 'https://images.unsplash.com/photo-1639477734993-44982980229e?w=400',
+                glow: '#DAA520'
+            },
+            saturn: {
+                name: 'Saturn',
+                image: 'https://images.unsplash.com/photo-1614732414444-096e5f1122d5?w=400',
+                glow: '#F4A460'
+            },
+            uranus: {
+                name: 'Uranus',
+                image: 'https://images.unsplash.com/photo-1639548206689-1a5238f8d5bb?w=400',
+                glow: '#00CED1'
+            },
+            neptune: {
+                name: 'Neptune',
+                image: 'https://images.unsplash.com/photo-1707056789816-e27c502d42bf?w=400',
+                glow: '#4169E1'
+            }
+        };
+
+        // Generate star field
+        function createStarField(containerId) {
+            const container = document.getElementById(containerId);
+            const starCount = 150;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                const size = Math.random() * 3 + 1;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 5;
+
+                star.style.left = x + '%';
+                star.style.top = y + '%';
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.animationDuration = duration + 's';
+                star.style.animationDelay = delay + 's';
+
+                container.appendChild(star);
+            }
+        }
+
+        // Set planet glow colors dynamically
+        function setPlanetGlows() {
+            const planetItems = document.querySelectorAll('.planet-item');
+            
+            planetItems.forEach(item => {
+                const glowColor = item.getAttribute('data-glow');
+                const glow = item.querySelector('.planet-glow');
+                const ring = item.querySelector('.planet-ring');
+                const name = item.querySelector('.planet-name');
+                
+                if (glow) {
+                    glow.style.background = `radial-gradient(circle, ${glowColor}30, transparent 70%)`;
+                    glow.style.boxShadow = `0 0 40px ${glowColor}`;
+                }
+                
+                if (ring) {
+                    ring.style.borderColor = glowColor + '40';
+                }
+
+                // Add hover effect for planet name color
+                item.addEventListener('mouseenter', () => {
+                    name.style.color = glowColor;
+                    name.style.textShadow = `0 0 20px ${glowColor}, 0 0 40px ${glowColor}60`;
+                    glow.style.boxShadow = `0 0 60px ${glowColor}`;
+                });
+
+                item.addEventListener('mouseleave', () => {
+                    name.style.color = 'white';
+                    name.style.textShadow = '0 2px 10px rgba(0, 0, 0, 0.8)';
+                    glow.style.boxShadow = `0 0 40px ${glowColor}`;
+                });
+            });
+        }
+
+        // Navigate to planet detail page
+        function navigateToPlanet(planetName) {
+            const planet = planetData[planetName];
+            if (!planet) return;
+
+            // Update planet detail page
+            const detailImage = document.getElementById('planetDetailImage');
+            const detailName = document.getElementById('planetDetailName');
+            const detailBg = document.querySelector('.planet-detail-bg');
+            const detailGlow = document.querySelector('.planet-detail-glow');
+            const dots = document.querySelectorAll('.planet-detail-dots .dot');
+
+            detailImage.src = planet.image;
+            detailImage.alt = planet.name;
+            detailName.textContent = planet.name;
+            detailName.style.textShadow = `0 0 30px ${planet.glow}, 0 0 60px ${planet.glow}60`;
+            
+            detailBg.style.background = `radial-gradient(circle at 50% 50%, ${planet.glow}10 0%, transparent 50%)`;
+            detailGlow.style.background = `radial-gradient(circle, ${planet.glow}30, transparent 70%)`;
+            detailGlow.style.boxShadow = `0 0 100px ${planet.glow}`;
+
+            dots.forEach(dot => {
+                dot.style.backgroundColor = planet.glow;
+            });
+
+            // Switch pages
+            document.getElementById('homePage').classList.remove('active');
+            document.getElementById('planetPage').classList.add('active');
+        }
+
+        // Navigate back to home
+        function navigateToHome() {
+            document.getElementById('planetPage').classList.remove('active');
+            document.getElementById('homePage').classList.add('active');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create star fields
+            createStarField('starField');
+            createStarField('starFieldDetail');
+
+            // Set planet glows
+            setPlanetGlows();
+
+            // Add click handlers to planets
+            const planetItems = document.querySelectorAll('.planet-item');
+            planetItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const planetName = item.getAttribute('data-planet');
+                    navigateToPlanet(planetName);
+                });
+            });
+
+            // Add click handler to back button
+            const backButton = document.getElementById('backButton');
+            backButton.addEventListener('click', navigateToHome);
+        });
+    </script>
+</body>
+</html>
